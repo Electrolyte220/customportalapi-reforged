@@ -1,5 +1,6 @@
 package net.kyrptonaught.customportalapi;
 
+import com.mojang.logging.LogUtils;
 import com.simibubi.create.api.contraption.train.PortalTrackProvider;
 import com.simibubi.create.content.trains.track.AllPortalTracks;
 import net.kyrptonaught.customportalapi.compat.kjs.CustomPortalAPIKubeJSPlugin;
@@ -32,6 +33,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import org.slf4j.Logger;
 
 import java.util.HashMap;
 
@@ -41,7 +43,7 @@ import static net.kyrptonaught.customportalapi.CustomPortalsMod.MOD_ID;
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
 public class CustomPortalsMod {
 	public static final String MOD_ID = "cpapireforged";
-
+	public static final Logger LOGGER = LogUtils.getLogger();
 	public static DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MOD_ID);
 	
     public static final RegistryObject<CustomPortalBlock> portalBlock = BLOCKS.register("custom_portal_block", () -> new CustomPortalBlock(Block.Properties.copy(Blocks.NETHER_PORTAL).noCollission().strength(-1).sound(SoundType.GLASS).lightLevel(state -> 11)));
@@ -92,7 +94,7 @@ public class CustomPortalsMod {
 	}
 
 	public static void logError(String message) {
-		System.out.println("[" + MOD_ID + "]ERROR: " + message);
+		LOGGER.error(message);
 	}
 
 	public static CustomPortalBlock getDefaultPortalBlock() {
