@@ -1,15 +1,17 @@
 package net.kyrptonaught.customportalapi;
 
-import static net.kyrptonaught.customportalapi.CustomPortalsMod.MOD_ID;
-
-import java.util.HashMap;
-
+import com.simibubi.create.api.contraption.train.PortalTrackProvider;
+import com.simibubi.create.content.trains.track.AllPortalTracks;
+import net.kyrptonaught.customportalapi.compat.kjs.CustomPortalAPIKubeJSPlugin;
 import net.kyrptonaught.customportalapi.init.ParticleInit;
 import net.kyrptonaught.customportalapi.portal.PortalIgnitionSource;
 import net.kyrptonaught.customportalapi.portal.PortalPlacer;
 import net.kyrptonaught.customportalapi.portal.frame.FlatPortalAreaHelper;
 import net.kyrptonaught.customportalapi.portal.frame.VanillaPortalAreaHelper;
 import net.kyrptonaught.customportalapi.portal.linking.PortalLinkingStorage;
+import net.kyrptonaught.customportalapi.util.CustomTeleporter;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
@@ -30,6 +32,10 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+
+import java.util.HashMap;
+
+import static net.kyrptonaught.customportalapi.CustomPortalsMod.MOD_ID;
 
 @Mod(MOD_ID)
 @Mod.EventBusSubscriber(bus = Mod.EventBusSubscriber.Bus.MOD)
@@ -95,6 +101,7 @@ public class CustomPortalsMod {
 
 	@SubscribeEvent
 	public static void onCommonStartUp(FMLCommonSetupEvent event) {
+		CustomPortalAPIKubeJSPlugin.loadKubePortals();
 //		CustomPortalBuilder.beginPortal().frameBlock(Blocks.GLOWSTONE).destDimID(new ResourceLocation("the_nether")).lightWithWater().tintColor(46, 5, 25).registerPortal();
 	}
 }

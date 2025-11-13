@@ -53,11 +53,24 @@ mixin {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 repositories {
+    maven { url = 'https://maven.architectury.dev/'
+        content {
+            includeGroup "dev.architectury"
+        }
+    }
+    maven { url = 'https://maven.latvian.dev/releases'
+        content {
+            includeGroup 'dev.latvian.mods'
+        }
+    }
 }
 
 dependencies {
     minecraft "net.neoforged:forge:${minecraft_version}-${neo_version}"
 	annotationProcessor "org.spongepowered:mixin:0.8.4:processor"
+    implementation fg.deobf("dev.architectury:architectury-forge:${architectury_version}")
+    implementation fg.deobf("dev.latvian.mods:rhino-forge:${rhino_version}")
+    implementation fg.deobf("dev.latvian.mods:kubejs-forge:${kubejs_version}")
 }
 
 tasks.withType(ProcessResources).configureEach {
@@ -67,6 +80,7 @@ tasks.withType(ProcessResources).configureEach {
             loader_version_range: loader_version_range,
             mod_id              : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
             mod_authors         : mod_authors, mod_description: mod_description, pack_format_number: pack_format_number,
+            kubejs_version      : kubejs_version
     ]
     inputs.properties replaceProperties
 

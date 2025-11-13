@@ -1,8 +1,5 @@
 package net.kyrptonaught.customportalapi.api;
 
-import java.util.function.Consumer;
-import java.util.function.Function;
-
 import net.kyrptonaught.customportalapi.CustomPortalApiRegistry;
 import net.kyrptonaught.customportalapi.CustomPortalBlock;
 import net.kyrptonaught.customportalapi.CustomPortalsMod;
@@ -19,6 +16,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.registries.RegistryObject;
+
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class CustomPortalBuilder {
     private final PortalLink portalLink;
@@ -49,7 +49,7 @@ public class CustomPortalBuilder {
      *
      * @param blockID Block identifier of the portal's frame block
      */
-    public CustomPortalBuilder frameBlock(ResourceLocation blockID) {
+    public CustomPortalBuilder frameBlockLoc(ResourceLocation blockID) {
         portalLink.block = blockID;
         return this;
     }
@@ -123,7 +123,7 @@ public class CustomPortalBuilder {
     /**
      * Specify a Custom Ignition Source to be used to ignite the portal. You must manually trigger the ignition yourself.
      */
-    public CustomPortalBuilder customIgnitionSource(ResourceLocation customSourceID) {
+    public CustomPortalBuilder customIgnitionSourceLoc(ResourceLocation customSourceID) {
         portalLink.portalIgnitionSource = PortalIgnitionSource.CustomSource(customSourceID);
         return this;
     }
