@@ -102,6 +102,12 @@ public class CustomPortalsMod {
 	@SubscribeEvent
 	public static void onCommonStartUp(FMLCommonSetupEvent event) {
 		CustomPortalAPIKubeJSPlugin.loadKubePortals();
+		event.enqueueWork(() -> CustomPortalApiRegistry.getAllPortalLinks().forEach(portalLink -> {
+            PortalTrackProvider provider = (l, f) ->
+			PortalTrackProvider.fromProbe(l, f, ResourceKey.create(Registries.DIMENSION, portalLink.returnDimID), ResourceKey.create(Registries.DIMENSION, portalLink.dimID),
+                        (ol, e) -> CustomTeleporter.customTPTarget(ol, e, e.blockPosition(), portalLink.getPortalBlock().getPortalBase(l, e.blockPosition()), portalLink.getFrameTester()));
+            AllPortalTracks.tryRegisterIntegration(BuiltInRegistries.BLOCK.getKey(portalLink.getPortalBlock()), provider);
+        }));
 //		CustomPortalBuilder.beginPortal().frameBlock(Blocks.GLOWSTONE).destDimID(new ResourceLocation("the_nether")).lightWithWater().tintColor(46, 5, 25).registerPortal();
 	}
 }
