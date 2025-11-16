@@ -1,8 +1,8 @@
 package net.kyrptonaught.customportalapi.api;
 
-import net.kyrptonaught.customportalapi.CustomPortalApiRegistry;
 import net.kyrptonaught.customportalapi.CustomPortalBlock;
 import net.kyrptonaught.customportalapi.CustomPortalsMod;
+import net.kyrptonaught.customportalapi.compat.kjs.CustomPortalAPIKubeJSPlugin;
 import net.kyrptonaught.customportalapi.portal.PortalIgnitionSource;
 import net.kyrptonaught.customportalapi.util.CPASoundEventData;
 import net.kyrptonaught.customportalapi.util.ColorUtil;
@@ -21,10 +21,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class CustomPortalBuilder {
-    private final PortalLink portalLink;
+    public final PortalLink portalLink;
+    public final ResourceLocation portalBlockId;
 
-    private CustomPortalBuilder() {
-        portalLink = new PortalLink();
+    private CustomPortalBuilder(String loc) {
+        portalBlockId = new ResourceLocation(CustomPortalsMod.MOD_ID, loc);
+        portalLink = new PortalLink(portalBlockId);
     }
 
     /**
@@ -32,8 +34,8 @@ public class CustomPortalBuilder {
      *
      * @return an instance of CustomPortalBuilder to begin configuring the portal
      */
-    public static CustomPortalBuilder beginPortal() {
-        return new CustomPortalBuilder();
+    public static CustomPortalBuilder beginPortal(String loc) {
+        return new CustomPortalBuilder(loc);
     }
 
     /**
@@ -41,7 +43,7 @@ public class CustomPortalBuilder {
      * This should be called last, only when you are finished configuring the portal
      */
     public void registerPortal() {
-        CustomPortalApiRegistry.addPortal(BuiltInRegistries.BLOCK.get(portalLink.block), portalLink);
+        CustomPortalAPIKubeJSPlugin.PORTALS.add(this);
     }
 
     /**

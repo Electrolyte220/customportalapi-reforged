@@ -1,7 +1,5 @@
 package net.kyrptonaught.customportalapi.util;
 
-import java.util.Optional;
-
 import net.kyrptonaught.customportalapi.CustomPortalApiRegistry;
 import net.kyrptonaught.customportalapi.CustomPortalsMod;
 import net.kyrptonaught.customportalapi.interfaces.CustomTeleportingEntity;
@@ -11,19 +9,29 @@ import net.kyrptonaught.customportalapi.portal.linking.DimensionalBlockPos;
 import net.minecraft.BlockUtil;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.Vec3i;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.village.poi.PoiManager;
+import net.minecraft.world.entity.ai.village.poi.PoiManager.Occupancy;
+import net.minecraft.world.entity.ai.village.poi.PoiRecord;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.border.WorldBorder;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.portal.PortalInfo;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.registries.ForgeRegistries;
+
+import java.util.Comparator;
+import java.util.Optional;
 
 public class CustomTeleporter {
 
@@ -58,6 +66,7 @@ public class CustomTeleporter {
 
 		DimensionalBlockPos destinationPos = CustomPortalsMod.portalLinkingStorage.getDestination(fromPortalRectangle.minCorner, entity.level().dimension());
 
+		//both portals must on the same axis
 		if (destinationPos != null && destinationPos.dimensionType.equals(destinationWorld.dimension().location())) {
 			PortalFrameTester portalFrameTester = portalFrameTesterFactory.createInstanceOfPortalFrameTester().init(destinationWorld, destinationPos.pos, portalAxis, frameBlock);
 			if (portalFrameTester.isValidFrame()) {
@@ -67,7 +76,29 @@ public class CustomTeleporter {
 				return portalFrameTester.getTPTargetInPortal(portalFrameTester.getRectangle(), portalAxis, portalFrameTester.getEntityOffsetInPortal(fromPortalRectangle, entity, portalAxis), entity);
 			}
 		}
-		return createDestinationPortal(destinationWorld, entity, portalAxis, fromPortalRectangle, frameBlock.defaultBlockState());
+		return getOrCreatePortal(destinationWorld, entity, portalAxis, fromPortalRectangle, frameBlock.defaultBlockState(), CustomPortalApiRegistry.getPortalLinkFromBase(frameBlock));
+	}
+
+	public static PortalInfo getOrCreatePortal(ServerLevel destination, Entity entity, Direction.Axis axis, BlockUtil.FoundRectangle portalFramePos, BlockState frameBlockState, PortalLink portalLink) {
+		PoiManager poiManager = destination.getPoiManager();
+		int range = 128;
+		poiManager.ensureLoadedAndValid(destination, portalFramePos.minCorner, range);
+		ResourceLocation portalBlockId = ForgeRegistries.BLOCKS.getKey(portalLink.getPortalBlock());
+		Optional<BlockPos> foundPortal = poiManager.getInSquare(poi ->
+						poi.is(portalBlockId), portalFramePos.minCorner, range, Occupancy.ANY)
+				.map(PoiRecord::getPos)
+				.filter(destination.getWorldBorder()::isWithinBounds)
+				.filter(pos -> destination.getBlockState(pos).hasProperty(BlockStateProperties.AXIS))
+				.min(Comparator.<BlockPos>comparingDouble(pos -> pos.distSqr(portalFramePos.minCorner)).thenComparingInt(Vec3i::getY));
+		if(foundPortal.isPresent()) {
+			BlockPos blockPos = foundPortal.get();
+			BlockState portalState = destination.getBlockState(blockPos);
+			BlockUtil.FoundRectangle portal = BlockUtil.getLargestRectangleAround(blockPos, portalState.getValue(BlockStateProperties.AXIS), 21, Direction.Axis.Y, 21, pos1 -> destination.getBlockState(pos1) == portalState);
+			PortalFrameTester frameTester = portalLink.getFrameTester().createInstanceOfPortalFrameTester();
+			CustomPortalsMod.portalLinkingStorage.createLink(portalFramePos.minCorner, entity.level().dimension(), portal.minCorner, destination.dimension());
+			return frameTester.getTPTargetInPortal(portal, axis, frameTester.getEntityOffsetInPortal(portalFramePos, entity, axis), entity);
+		}
+		return createDestinationPortal(destination, entity, axis, portalFramePos, frameBlockState);
 	}
 
 	public static PortalInfo createDestinationPortal(ServerLevel destination, Entity entity, Direction.Axis axis, BlockUtil.FoundRectangle portalFramePos, BlockState frameBlock) {

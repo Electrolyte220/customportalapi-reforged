@@ -98,6 +98,7 @@ public class CustomPortalBlock extends Block {
         entityInPortal.tickInPortal(pos.immutable());
         if (!entityInPortal.didTeleport() && entityInPortal.getTimeInPortal() >= entity.getPortalWaitTime() && entity.canChangeDimensions()) {
             entityInPortal.setDidTP(true);
+            entity.setPortalCooldown(80);
             if (!world.isClientSide())
                 CustomTeleporter.TPToDim(world, entity, getPortalBase(world, pos), pos);
         }

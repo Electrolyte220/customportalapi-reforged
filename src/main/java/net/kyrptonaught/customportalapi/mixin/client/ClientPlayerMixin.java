@@ -1,15 +1,6 @@
 package net.kyrptonaught.customportalapi.mixin.client;
 
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.Unique;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
 import com.mojang.authlib.GameProfile;
-
 import net.kyrptonaught.customportalapi.CustomPortalApiRegistry;
 import net.kyrptonaught.customportalapi.interfaces.ClientPlayerInColoredPortal;
 import net.kyrptonaught.customportalapi.interfaces.EntityInCustomPortal;
@@ -17,7 +8,6 @@ import net.kyrptonaught.customportalapi.util.CustomPortalHelper;
 import net.kyrptonaught.customportalapi.util.PortalLink;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.DeathScreen;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -29,6 +19,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @OnlyIn(Dist.CLIENT)
 @Mixin(LocalPlayer.class)
@@ -82,13 +79,13 @@ public abstract class ClientPlayerMixin extends Player implements EntityInCustom
 	private void updateCustomNausea(int previousColor) {
 		this.oSpinningEffectIntensity = this.spinningEffectIntensity;
 		float f = 0.0F;
-		if (this.isInsidePortal) {
+		if (this.getTimeInPortal() < this.getPortalWaitTime() && !this.isOnPortalCooldown()) {
 			if (this.minecraft.screen != null && !this.minecraft.screen.isPauseScreen() && !(this.minecraft.screen instanceof DeathScreen)) {
 				if (this.minecraft.screen instanceof AbstractContainerScreen) {
 					this.closeContainer();
 				}
 
-				this.minecraft.setScreen((Screen) null);
+				this.minecraft.setScreen(null);
 			}
 
 			if (this.oSpinningEffectIntensity == 0.0F && previousColor != -999) { // previous color prevents this from playing after a teleport. A tp sets the previousColor to -999

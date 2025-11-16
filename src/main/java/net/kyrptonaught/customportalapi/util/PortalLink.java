@@ -1,7 +1,5 @@
 package net.kyrptonaught.customportalapi.util;
 
-import java.util.function.Consumer;
-
 import net.kyrptonaught.customportalapi.CustomPortalApiRegistry;
 import net.kyrptonaught.customportalapi.CustomPortalBlock;
 import net.kyrptonaught.customportalapi.CustomPortalsMod;
@@ -10,12 +8,15 @@ import net.kyrptonaught.customportalapi.portal.frame.PortalFrameTester;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+
+import java.util.function.Consumer;
 
 public class PortalLink {
     public ResourceLocation block;
     public PortalIgnitionSource portalIgnitionSource = PortalIgnitionSource.FIRE;
-    private RegistryObject<CustomPortalBlock> portalBlock = CustomPortalsMod.portalBlock;
+    private ResourceLocation portalBlockId;
     public ResourceLocation dimID;
     public ResourceLocation returnDimID = new ResourceLocation("overworld");
     public boolean onlyIgnitableInReturnDim = false;
@@ -34,6 +35,10 @@ public class PortalLink {
 
     }
 
+    public PortalLink(ResourceLocation portalBlockId) {
+        this.portalBlockId = portalBlockId;
+    }
+
     public PortalLink(ResourceLocation blockID, ResourceLocation dimID, int colorID) {
         this.block = blockID;
         this.dimID = dimID;
@@ -41,11 +46,11 @@ public class PortalLink {
     }
 
     public CustomPortalBlock getPortalBlock() {
-        return portalBlock.get();
+        return (CustomPortalBlock) ForgeRegistries.BLOCKS.getValue(portalBlockId);
     }
 
     public void setPortalBlock(RegistryObject<CustomPortalBlock> block) {
-        this.portalBlock = block;
+        this.portalBlockId = ForgeRegistries.BLOCKS.getKey(block.get());
     }
 
     public boolean doesIgnitionMatch(PortalIgnitionSource attemptedSource) {

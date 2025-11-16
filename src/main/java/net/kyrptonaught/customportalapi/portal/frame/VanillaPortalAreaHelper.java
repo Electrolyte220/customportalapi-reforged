@@ -1,12 +1,7 @@
 package net.kyrptonaught.customportalapi.portal.frame;
 
-import java.util.Optional;
-import java.util.function.Predicate;
-
 import com.google.common.collect.Sets;
-
 import net.kyrptonaught.customportalapi.CustomPortalApiRegistry;
-import net.kyrptonaught.customportalapi.CustomPortalsMod;
 import net.kyrptonaught.customportalapi.util.CustomPortalHelper;
 import net.kyrptonaught.customportalapi.util.PortalLink;
 import net.minecraft.BlockUtil;
@@ -22,6 +17,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.portal.PortalInfo;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.Optional;
+import java.util.function.Predicate;
 
 public class VanillaPortalAreaHelper extends PortalFrameTester {
     protected Direction.Axis axis;
@@ -155,7 +153,7 @@ public class VanillaPortalAreaHelper extends PortalFrameTester {
 
     public void lightPortal(Block frameBlock) {
         PortalLink link = CustomPortalApiRegistry.getPortalLinkFromBase(frameBlock);
-        BlockState blockState = CustomPortalHelper.blockWithAxis(link != null ? link.getPortalBlock().defaultBlockState() : CustomPortalsMod.getDefaultPortalBlock().defaultBlockState(), axis);
+        BlockState blockState = CustomPortalHelper.blockWithAxis(link != null ? link.getPortalBlock().defaultBlockState() : Blocks.NETHER_PORTAL.defaultBlockState(), axis);
         BlockPos.betweenClosed(this.lowerCorner, this.lowerCorner.relative(Direction.UP, this.height - 1).relative(this.axis, this.width - 1)).forEach((blockPos) -> {
             this.world.setBlock(blockPos, blockState, 18);
         });

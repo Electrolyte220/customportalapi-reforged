@@ -1,14 +1,6 @@
 package net.kyrptonaught.customportalapi.mixin.client;
 
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
-
 import com.mojang.blaze3d.systems.RenderSystem;
-
-import net.kyrptonaught.customportalapi.CustomPortalsMod;
 import net.kyrptonaught.customportalapi.interfaces.ClientPlayerInColoredPortal;
 import net.kyrptonaught.customportalapi.util.ColorUtil;
 import net.minecraft.client.Minecraft;
@@ -20,6 +12,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.spongepowered.asm.mixin.Final;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 @OnlyIn(Dist.CLIENT)
 @Mixin(Gui.class)
@@ -42,7 +39,7 @@ public class InGameHudMixin {
     @Redirect(method = "renderPortalOverlay", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/block/BlockModelShaper;getParticleIcon(Lnet/minecraft/world/level/block/state/BlockState;)Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;"))
     public TextureAtlasSprite renderCustomPortalOverlay(BlockModelShaper blockModels, BlockState blockState) {
         if (((ClientPlayerInColoredPortal) minecraft.player).getLastUsedPortalColor() >= 0) {
-            return this.minecraft.getBlockRenderer().getBlockModelShaper().getParticleIcon(CustomPortalsMod.portalBlock.get().defaultBlockState());
+            return this.minecraft.getBlockRenderer().getBlockModelShaper().getParticleIcon(blockState);
         }
         return this.minecraft.getBlockRenderer().getBlockModelShaper().getParticleIcon(Blocks.NETHER_PORTAL.defaultBlockState());
     }

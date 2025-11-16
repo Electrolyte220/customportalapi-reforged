@@ -1,38 +1,48 @@
 package net.kyrptonaught.customportalapi;
 
+import com.google.common.collect.ImmutableSet;
 import com.mojang.logging.LogUtils;
-import com.simibubi.create.api.contraption.train.PortalTrackProvider;
-import com.simibubi.create.content.trains.track.AllPortalTracks;
+import net.kyrptonaught.customportalapi.compat.create.CreateIntegration;
 import net.kyrptonaught.customportalapi.compat.kjs.CustomPortalAPIKubeJSPlugin;
+import net.kyrptonaught.customportalapi.compat.kjs.CustomPortalAPIStartupEvents;
+import net.kyrptonaught.customportalapi.compat.kjs.RegisterPortalEvent;
+import net.kyrptonaught.customportalapi.datagen.CustomPortalApiDynamicResourcePack;
 import net.kyrptonaught.customportalapi.init.ParticleInit;
 import net.kyrptonaught.customportalapi.portal.PortalIgnitionSource;
 import net.kyrptonaught.customportalapi.portal.PortalPlacer;
 import net.kyrptonaught.customportalapi.portal.frame.FlatPortalAreaHelper;
 import net.kyrptonaught.customportalapi.portal.frame.VanillaPortalAreaHelper;
 import net.kyrptonaught.customportalapi.portal.linking.PortalLinkingStorage;
-import net.kyrptonaught.customportalapi.util.CustomTeleporter;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.repository.Pack;
+import net.minecraft.server.packs.repository.Pack.Position;
+import net.minecraft.server.packs.repository.PackSource;
+import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.SoundType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLConstructModEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.registries.DeferredRegister;
+import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.minecraftforge.registries.RegisterEvent;
 import org.slf4j.Logger;
 
 import java.util.HashMap;
@@ -44,9 +54,6 @@ import static net.kyrptonaught.customportalapi.CustomPortalsMod.MOD_ID;
 public class CustomPortalsMod {
 	public static final String MOD_ID = "cpapireforged";
 	public static final Logger LOGGER = LogUtils.getLogger();
-	public static DeferredRegister<Block> BLOCKS = DeferredRegister.create(ForgeRegistries.BLOCKS, MOD_ID);
-	
-    public static final RegistryObject<CustomPortalBlock> portalBlock = BLOCKS.register("custom_portal_block", () -> new CustomPortalBlock(Block.Properties.copy(Blocks.NETHER_PORTAL).noCollission().strength(-1).sound(SoundType.GLASS).lightLevel(state -> 11)));
 	public static HashMap<ResourceLocation, ResourceKey<Level>> dims = new HashMap<>();
 	public static ResourceLocation VANILLAPORTAL_FRAMETESTER = new ResourceLocation(MOD_ID, "vanillanether");
 	public static ResourceLocation FLATPORTAL_FRAMETESTER = new ResourceLocation(MOD_ID, "flat");
@@ -54,8 +61,6 @@ public class CustomPortalsMod {
 
 	public CustomPortalsMod() {
 		IEventBus bus = FMLJavaModLoadingContext.get().getModEventBus();
-
-		BLOCKS.register(bus);
 
 		ParticleInit.PARTICLES.register(bus);
 		onInitialize(bus);
@@ -97,19 +102,44 @@ public class CustomPortalsMod {
 		LOGGER.error(message);
 	}
 
-	public static CustomPortalBlock getDefaultPortalBlock() {
-		return portalBlock.get();
+	@SubscribeEvent
+	public static void onRegister(FMLConstructModEvent event) {
+		event.enqueueWork(() -> CustomPortalAPIStartupEvents.REGISTER.post(new RegisterPortalEvent()));
+	}
+
+	@SubscribeEvent
+	public static void onBlockRegister(RegisterEvent event) {
+		event.register(ForgeRegistries.BLOCKS.getRegistryKey(), h -> {
+			CustomPortalAPIKubeJSPlugin.PORTALS.forEach(portal -> h.register(portal.portalBlockId.getPath(), new CustomPortalBlock(Block.Properties.copy(Blocks.NETHER_PORTAL).noCollission().strength(-1).sound(SoundType.GLASS).lightLevel(state -> 11))));
+			if(FMLLoader.getDist() != Dist.DEDICATED_SERVER) {
+				CustomPortalApiDynamicResourcePack.generateAllAssets();
+			}
+		});
+		event.register(ForgeRegistries.POI_TYPES.getRegistryKey(), h ->
+				CustomPortalAPIKubeJSPlugin.PORTALS.forEach(portal -> h.register(portal.portalBlockId.getPath(), new PoiType(ImmutableSet.copyOf(ForgeRegistries.BLOCKS.getValue(portal.portalBlockId).getStateDefinition().getPossibleStates()), 0, 1))));
 	}
 
 	@SubscribeEvent
 	public static void onCommonStartUp(FMLCommonSetupEvent event) {
-		CustomPortalAPIKubeJSPlugin.loadKubePortals();
-		event.enqueueWork(() -> CustomPortalApiRegistry.getAllPortalLinks().forEach(portalLink -> {
-            PortalTrackProvider provider = (l, f) ->
-			PortalTrackProvider.fromProbe(l, f, ResourceKey.create(Registries.DIMENSION, portalLink.returnDimID), ResourceKey.create(Registries.DIMENSION, portalLink.dimID),
-                        (ol, e) -> CustomTeleporter.customTPTarget(ol, e, e.blockPosition(), portalLink.getPortalBlock().getPortalBase(l, e.blockPosition()), portalLink.getFrameTester()));
-            AllPortalTracks.tryRegisterIntegration(BuiltInRegistries.BLOCK.getKey(portalLink.getPortalBlock()), provider);
-        }));
+		CustomPortalAPIKubeJSPlugin.registerKubePortals();
+		if(ModList.get().isLoaded("create")) {
+			event.enqueueWork(() -> CustomPortalApiRegistry.getAllPortalLinks().forEach(CreateIntegration::portalIntegration));
+		}
 //		CustomPortalBuilder.beginPortal().frameBlock(Blocks.GLOWSTONE).destDimID(new ResourceLocation("the_nether")).lightWithWater().tintColor(46, 5, 25).registerPortal();
+	}
+
+
+	@SubscribeEvent
+	public static void onAddPacks(AddPackFindersEvent event) {
+		if(event.getPackType() == PackType.CLIENT_RESOURCES) {
+			event.addRepositorySource(c -> c.accept(Pack.readMetaAndCreate(
+					CustomPortalsMod.MOD_ID + ":dynamic_assets",
+					Component.literal(CustomPortalsMod.MOD_ID + ":dynamic_assets"),
+					true,
+					CustomPortalApiDynamicResourcePack::new,
+					PackType.CLIENT_RESOURCES,
+					Position.BOTTOM,
+					PackSource.BUILT_IN)));
+		}
 	}
 }
