@@ -1,5 +1,6 @@
 package net.kyrptonaught.customportalapi.mixin;
 
+import net.minecraftforge.fml.loading.LoadingModList;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -18,12 +19,8 @@ public class MixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        if(targetClassName.equals("com.simibubi.create.content.trains.track.AllPortalTracks")) {
-            try {
-                Class.forName("com.simibubi.create.content.trains.track.AllPortalTracks", false, this.getClass().getClassLoader());
-            } catch(ClassNotFoundException e) {
-                return false;
-            }
+        if(mixinClassName.equals("net.kyrptonaught.customportalapi.mixin.AllPortalTracksMixin")) {
+            return LoadingModList.get().getModFileById("create") != null;
         }
         return true;
     }
